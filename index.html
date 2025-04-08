@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario con Descarga en PDF</title>
+    <!-- Incluimos la biblioteca jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #3a559f;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        input:focus {
+            border-color: #3a559f;
+            outline: none;
+            box-shadow: 0 0 5px rgba(58, 85, 159, 0.3);
+        }
+        
+        button {
+            background-color: #3a559f;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #293e7c;
+        }
+        
+        #resultados {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: none;
+        }
+        
+        #resultados h2 {
+            color: #3a559f;
+            margin-top: 0;
+        }
+        
+        .info-item {
+            margin-bottom: 10px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 100px;
+        }
+        
+        #descargarBtn {
+            background-color: #28a745;
+            margin-top: 20px;
+        }
+        
+        #descargarBtn:hover {
+            background-color: #218838;
+        }
+        
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Formulario de Contacto</h1>
+        
+        <form id="contactForm">
+            <div class="form-group">
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" required>
+                <div class="error" id="nombreError">Por favor ingresa tu nombre</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="apellido">Apellido:</label>
+                <input type="text" id="apellido" name="apellido" required>
+                <div class="error" id="apellidoError">Por favor ingresa tu apellido</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="correo">Correo electrónico:</label>
+                <input type="email" id="correo" name="correo" required>
+                <div class="error" id="correoError">Por favor ingresa un correo electrónico válido</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="telefono">Teléfono:</label>
+                <input type="tel" id="telefono" name="telefono" required>
+                <div class="error" id="telefonoError">Por favor ingresa un número de teléfono válido</div>
+            </div>
+            
+            <button type="button" id="guardarBtn">Guardar</button>
+        </form>
+        
+        <div id="resultados">
+            <h2>Información del Usuario</h2>
+            <div class="info-item"><span class="info-label">Nombre:</span> <span id="nombreResult"></span></div>
+            <div class="info-item"><span class="info-label">Apellido:</span> <span id="apellidoResult"></span></div>
+            <div class="info-item"><span class="info-label">Correo:</span> <span id="correoResult"></span></div>
+            <div class="info-item"><span class="info-label">Teléfono:</span> <span id="telefonoResult"></span></div>
+            
+            <button type="button" id="descargarBtn">Descargar PDF</button>
+        </div>
+    </div>
+
+    <script>
+        // Variable global para acceder a jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // Función para validar el formulario
+        function validarFormulario() {
+            let esValido = true;
+            
+            // Validar nombre
+            const nombre = document.getElementById('nombre').value.trim();
+            if (nombre === '') {
+                document.getElementById('nombreError').style.display = 'block';
+                esValido = false;
+            } else {
+                document.getElementById('nombreError').style.display = 'none';
+            }
+            
+            // Validar apellido
+            const apellido = document.getElementById('apellido').value.trim();
+            if (apellido === '') {
+                document.getElementById('apellidoError').style.display = 'block';
+                esValido = false;
+            } else {
+                document.getElementById('apellidoError').style.display = 'none';
+            }
+            
+            // Validar correo
+            const correo = document.getElementById('correo').value.trim();
+            const correoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!correoRegex.test(correo)) {
+                document.getElementById('correoError').style.display = 'block';
+                esValido = false;
+            } else {
+                document.getElementById('correoError').style.display = 'none';
+            }
+            
+            // Validar teléfono
+            const telefono = document.getElementById('telefono').value.trim();
+            if (telefono === '') {
+                document.getElementById('telefonoError').style.display = 'block';
+                esValido = false;
+            } else {
+                document.getElementById('telefonoError').style.display = 'none';
+            }
+            
+            return esValido;
+        }
+        
+        // Función para mostrar los resultados
+        function mostrarResultados() {
+            if (!validarFormulario()) {
+                return;
+            }
+            
+            // Obtener valores
+            const nombre = document.getElementById('nombre').value;
+            const apellido = document.getElementById('apellido').value;
+            const correo = document.getElementById('correo').value;
+            const telefono = document.getElementById('telefono').value;
+            
+            // Mostrar valores en la sección de resultados
+            document.getElementById('nombreResult').textContent = nombre;
+            document.getElementById('apellidoResult').textContent = apellido;
+            document.getElementById('correoResult').textContent = correo;
+            document.getElementById('telefonoResult').textContent = telefono;
+            
+            // Mostrar la sección de resultados
+            document.getElementById('resultados').style.display = 'block';
+        }
+        
+        // Función para descargar la información en PDF
+        function descargarPDF() {
+            // Obtener valores
+            const nombre = document.getElementById('nombreResult').textContent;
+            const apellido = document.getElementById('apellidoResult').textContent;
+            const correo = document.getElementById('correoResult').textContent;
+            const telefono = document.getElementById('telefonoResult').textContent;
+            
+            // Crear nuevo documento PDF
+            const doc = new jsPDF();
+            
+            // Configurar estilo
+            doc.setFontSize(33);
+            doc.setTextColor(58, 85, 159);
+            doc.text('Información del Usuario', 105, 20, { align: 'center' });
+            
+            // Agregar información
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            
+            const startY = 40;
+            const lineHeight = 10;
+            
+            doc.setFont(undefined, 'bold');
+            doc.text('Nombre:', 20, startY);
+            doc.setFont(undefined, 'normal');
+            doc.text(nombre, 70, startY);
+            
+            doc.setFont(undefined, 'bold');
+            doc.text('Apellido:', 20, startY + lineHeight);
+            doc.setFont(undefined, 'normal');
+            doc.text(apellido, 70, startY + lineHeight);
+            
+            doc.setFont(undefined, 'bold');
+            doc.text('Correo:', 20, startY + lineHeight * 2);
+            doc.setFont(undefined, 'normal');
+            doc.text(correo, 70, startY + lineHeight * 2);
+            
+            doc.setFont(undefined, 'bold');
+            doc.text('Teléfono:', 20, startY + lineHeight * 3);
+            doc.setFont(undefined, 'normal');
+            doc.text(telefono, 70, startY + lineHeight * 3);
+            
+            // Agregar un borde decorativo
+            doc.setDrawColor(58, 85, 159);
+            doc.setLineWidth(0.5);
+            doc.rect(15, 15, 180, 100);
+            
+            // Agregar fecha actual
+            const fecha = new Date().toLocaleDateString();
+            doc.setFontSize(10);
+            doc.text(`Fecha de registro: ${fecha}`, 105, 110, { align: 'center' });
+            
+            // Guardar el PDF y descargarlo
+            doc.save('informacion_usuario.pdf');
+        }
+        
+        // Agregar eventos a los botones
+        document.getElementById('guardarBtn').addEventListener('click', mostrarResultados);
+        document.getElementById('descargarBtn').addEventListener('click', descargarPDF);
+    </script>
+</body>
+</html>
